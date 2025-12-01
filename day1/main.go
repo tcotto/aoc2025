@@ -37,29 +37,33 @@ func main() {
 	linkedList = append(linkedList, &lastNode)
 
 	dialNode := linkedList[50]
-	zeros := 0
+	totalZeros := 0
 
 	for _, i := range input {
-		dialNode = turnNodes(i.turnDirection, i.noOfTurns, dialNode)
-		if dialNode.value == 0 {
-			zeros = zeros + 1
-		}
+		zeros := 0
+		dialNode, zeros = turnNodes(i.turnDirection, i.noOfTurns, 0, dialNode, true)
+		totalZeros = totalZeros + zeros
 	}
 
-	fmt.Println(zeros)
+	fmt.Println(totalZeros)
 
 }
 
-func turnNodes(direction string, numberOfTurns int, node *DoubleLLNode) *DoubleLLNode {
+func turnNodes(direction string, numberOfTurns int, numberOfZeros int, node *DoubleLLNode, newPass bool) (*DoubleLLNode, int) {
+	newNumberOfZeros := numberOfZeros
+	if node.value == 0 && newPass == false {
+		newNumberOfZeros = newNumberOfZeros + 1
+	}
+
 	if numberOfTurns != 0 {
 		if direction == "R" {
-			node = turnNodes("R", numberOfTurns-1, node.next)
+			node, newNumberOfZeros = turnNodes("R", numberOfTurns-1, newNumberOfZeros, node.next, false)
 		} else {
-			node = turnNodes("L", numberOfTurns-1, node.previous)
+			node, newNumberOfZeros = turnNodes("L", numberOfTurns-1, newNumberOfZeros, node.previous, false)
 		}
 	}
 
-	return node
+	return node, newNumberOfZeros
 }
 
 func readInput() []TextInput {
