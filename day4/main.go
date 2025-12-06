@@ -7,14 +7,14 @@ import (
 )
 
 func main() {
-	file, _ := os.Open("./input.txt")
+	file, _ := os.Open("./" +
+		"input.txt")
 	defer func() {
 		file.Close()
 	}()
 
 	scanner := bufio.NewScanner(file)
 	var lines []string
-	foundObjects := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		lines = append(lines, line)
@@ -24,32 +24,42 @@ func main() {
 		os.Exit(1)
 	}
 
-	for i, line := range lines {
-		if i == 0 {
-			foundObjects += processVectorPosition("", lines[i+1], line)
-			continue
+	totalFoundObjects := 0
+	newFoundObjects := true
+	for newFoundObjects {
+		var tempFoundObject int
+		var newLines []string
+		for i, line := range lines {
+			temp := 0
+			var newLine string
+
+			if i == 0 {
+				temp, newLine = processVectorPosition("", lines[i+1], line)
+			} else if i == len(lines)-1 {
+				temp, newLine = processVectorPosition(lines[i-1], "", line)
+			} else {
+				temp, newLine = processVectorPosition(lines[i-1], lines[i+1], line)
+			}
+			tempFoundObject += temp
+			newLines = append(newLines, newLine)
 		}
 
-		if i == len(lines)-1 {
-			foundObjects += processVectorPosition(lines[i-1], "", line)
-			break
+		if tempFoundObject == 0 {
+			newFoundObjects = false
 		}
 
-		foundObjects += processVectorPosition(lines[i-1], lines[i+1], line)
+		lines = newLines
+		totalFoundObjects += tempFoundObject
 	}
 
-	if foundObjects != 1367 {
-		fmt.Errorf("WRONG ANSWER!")
-		os.Exit(1)
-	}
-
-	fmt.Println(foundObjects)
+	fmt.Println(totalFoundObjects)
 }
 
-func processVectorPosition(above, below, line string) int {
+func processVectorPosition(above, below, line string) (int, string) {
 	xpos := 0
 	l := len(line)
 	accessOnLine := 0
+	var positionsToRemove []int
 	for i, char := range line {
 
 		if string(char) != "@" {
@@ -107,8 +117,15 @@ func processVectorPosition(above, below, line string) int {
 
 		if finder < 4 {
 			accessOnLine++
+			positionsToRemove = append(positionsToRemove, i)
 		}
 	}
 
-	return accessOnLine
+	for _, position := range positionsToRemove {
+		lineBytes := []byte(line)
+		lineBytes[position] = '.'
+		line = string(lineBytes)
+	}
+
+	return accessOnLine, line
 }
