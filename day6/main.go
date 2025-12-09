@@ -3,13 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
-	file, _ := os.Open("./smolinput.txt")
+	file, _ := os.Open("./input.txt")
 
 	scanner := bufio.NewScanner(file)
 	var lines []string
@@ -20,77 +20,102 @@ func main() {
 
 	problems := make(map[int][]int)
 	newProblems := make(map[int][]string)
-	var newProblemsOperands []string
+	//var newProblemsOperands []string
 	total := 0
 	total2 := 0
 
-	for i, line := range lines {
-		temp := ""
-		currentindex := 0
-		newWs := false
+	allBreakIndex := make(map[int]bool)
+	var operandList []string
 
-		if i == len(lines)-1 {
-			for j, char := range line {
-				if string(char) == " " {
-					if temp != "" {
-						total += processProblem(problems[currentindex], temp)
-						newProblemsOperands = append(newProblemsOperands, temp)
-						currentindex++
-					}
-
-					temp = ""
-					continue
-				}
-				if j == len(line)-1 && temp == "" {
-					newProblemsOperands = append(newProblemsOperands, string(char))
-					total += processProblem(problems[currentindex], string(char))
-				}
-				temp = string(char)
-			}
-			break
+	// get the last line which is the operands
+	for i, operand := range lines[len(lines)-1] {
+		op := string(operand)
+		if i == 0 {
+			operandList = append(operandList, op)
+			continue
 		}
 
+		if op == "*" || op == "/" || op == "+" || op == "-" {
+			allBreakIndex[i-1] = true
+			operandList = append(operandList, op)
+		}
+	}
+
+	for i, line := range lines {
+		if i == len(lines)-1 {
+			break
+		}
+		temp := ""
+		currentindex := 0
+
+		//if i == len(lines)-1 {
+		//	for j, char := range line {
+		//		if string(char) == " " {
+		//			if temp != "" {
+		//				total += processProblem(problems[currentindex], temp)
+		//				newProblemsOperands = append(newProblemsOperands, temp)
+		//				currentindex++
+		//			}
+		//
+		//			temp = ""
+		//			continue
+		//		}
+		//		if j == len(line)-1 && temp == "" {
+		//			newProblemsOperands = append(newProblemsOperands, string(char))
+		//			total += processProblem(problems[currentindex], string(char))
+		//		}
+		//		temp = string(char)
+		//	}
+		//	break
+		//}
+
 		for j, char := range line {
-			if string(char) == " " {
-				if temp != "" {
-					num, _ := strconv.Atoi(temp)
-					_, ok := problems[currentindex]
-					if ok {
-						problems[currentindex] = append(problems[currentindex], num)
-						newProblems[currentindex] = append(newProblems[currentindex], temp)
-					} else {
-						problems[currentindex] = []int{num}
-						newProblems[currentindex] = []string{temp}
-					}
-					currentindex++
+			_, ok := allBreakIndex[j]
+			if ok {
+				_, ok = newProblems[currentindex]
+				if ok {
+					newProblems[currentindex] = append(newProblems[currentindex], temp)
+				} else {
+					newProblems[currentindex] = []string{temp}
 				}
 				temp = ""
+				currentindex++
 				continue
 			}
+			temp = temp + string(char)
 
 			if j == len(line)-1 {
-				if temp != "" {
-					num, _ := strconv.Atoi(temp + string(char))
-					_, ok := problems[currentindex]
-					if ok {
-						problems[currentindex] = append(problems[currentindex], num)
-						newProblems[currentindex] = append(newProblems[currentindex], temp+string(char))
-					} else {
-						problems[currentindex] = []int{num}
-						newProblems[currentindex] = []string{temp + string(char)}
-					}
+				_, ok = newProblems[currentindex]
+				if ok {
+					newProblems[currentindex] = append(newProblems[currentindex], temp)
+				} else {
+					newProblems[currentindex] = []string{temp}
 				}
-
-				break
 			}
 
-			temp = temp + string(char)
+			//if j == len(line)-1 {
+			//	if temp != "" {
+			//		num, _ := strconv.Atoi(temp + string(char))
+			//		_, ok := problems[currentindex]
+			//		if ok {
+			//			problems[currentindex] = append(problems[currentindex], num)
+			//			newProblems[currentindex] = append(newProblems[currentindex], temp+string(char))
+			//		} else {
+			//			problems[currentindex] = []int{num}
+			//			newProblems[currentindex] = []string{temp + string(char)}
+			//		}
+			//	}
+			//
+			//	break
+			//}
+
+			//temp = temp + string(char)
 		}
 	}
 
 	mapLen := len(newProblems)
 	for i := mapLen - 1; i >= 0; i-- {
-		total2 += processReverseProblem(newProblems[i], newProblemsOperands[i])
+		total2 += processReverseProblem(newProblems[i], operandList[i])
 	}
 
 	fmt.Println(problems)
@@ -138,11 +163,13 @@ func processReverseProblem(numbers []string, operand string) int {
 		}
 	}
 
-	tmp, _ := strconv.Atoi(x[maxLength])
+	tmp, _ := strconv.Atoi(strings.TrimSpace(x[maxLength]))
 	total = tmp
-
 	for i := maxLength - 1; i >= 0; i-- {
-		tmp2, _ := strconv.Atoi(x[maxLength])
+		if string(x[i][0]) == " " {
+			x[i] = x[i][1:]
+		}
+		tmp2, _ := strconv.Atoi(strings.TrimSpace(x[i]))
 		switch operand {
 		case "+":
 			total += tmp2
